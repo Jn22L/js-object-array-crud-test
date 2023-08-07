@@ -1,13 +1,15 @@
 const express = require("express");
+const pool = require("./config/db-pool.js");
+const { blackListCheck } = require("./check-ip-black-list.js");
 const app = express();
 const port = 3000;
 
-// ip차단 미들웨어
-const BLACK_LIST_IP = ["127.0.0.1"];
-app.use(function (req, res, next) {
+// Check IP black list
+app.use(async function (req, res, next) {
   const clientIP = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  if (BLACK_LIST_IP.indexOf(clientIP) > -1) {
-    console.log("차단:", clientIP);
+  const isBlack = await blackListCheck(clientIP);
+  if (isBlack) {
+    console.log("블랙IP차단:", clientIP);
     req.pause();
     res.status(400).end();
   } else {
